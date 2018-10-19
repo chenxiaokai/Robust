@@ -8,11 +8,21 @@ import org.gradle.api.file.FileCollection
 import java.security.MessageDigest
 /**
  * Created by hedex on 17/2/14.
+ *
+ * calculate unique string for each apk,you can get the string in file located in build/outputs/robust/robust.apkhash
+ *
+ * 创建 robust.apkhash 文件
  */
 class RobustApkHashAction implements Action<Project> {
     @Override
     void execute(Project project) {
         project.android.applicationVariants.each { variant ->
+            // variant 的值 只有 debug  和 release
+            //variant.name = debug
+            //variant.name = release
+
+
+            // packageTask 是 packageRelease 或者 packageDebug
             def packageTask = project.tasks.findByName("package${variant.name.capitalize()}")
 
             if (packageTask == null) {
@@ -22,10 +32,15 @@ class RobustApkHashAction implements Action<Project> {
             packageTask.doFirst {
 //                project.logger.quiet("===start compute robust apk hash===")
 //                def startTime = System.currentTimeMillis()
+
+                // partFiles存储  resourceFile ，dexFolders ，javaResourceFiles， jniFolders， assets 的目录File 对象
                 List<File> partFiles = new ArrayList<>()
 
+                //gradleplugin  3.0.0 或者更高
                 if (isGradlePlugin300orAbove()){
                     //protected FileCollection resourceFiles;
+
+                    // E:\github\Robust-master\app\build\intermediates\res\resources-release.ap_  或者 resources-debug.ap_
                     FileCollection resourceFiles = packageTask.resourceFiles
                     if (null == resourceFiles) {
                         return
@@ -35,6 +50,7 @@ class RobustApkHashAction implements Action<Project> {
                     //protected FileCollection dexFolders;
                     FileCollection dexFolders = null
                     try {
+                        // E:\github\Robust-master\app\build\intermediates\transforms\dex\release\folders\1000\1f\main
                         dexFolders = packageTask.dexFolders
                     } catch (MissingPropertyException e) {
                         // api is not public
@@ -68,6 +84,7 @@ class RobustApkHashAction implements Action<Project> {
                     //protected FileCollection assets;
                     FileCollection assets = null;
                     try {
+                        // E:\github\Robust-master\app\build\intermediates\assets\release
                         assets = packageTask.assets
                     } catch (MissingPropertyException e) {
                     }
@@ -79,11 +96,16 @@ class RobustApkHashAction implements Action<Project> {
 
                     if (assets instanceof FileCollection) {
                         FileCollection assetsFileCollection = (FileCollection) assets;
+
+                        //创建文件  /Robust/app/robust/apkhash
+                        //计算每个apk的唯一的字符串
                         createHashFile(assetsFileCollection.asPath, Constants.ROBUST_APK_HASH_FILE_NAME, robustHash)
                     }
                     return
 
                 } else {
+
+                //gradleplugin  3.0.0 以下的
 
                 File resourceFile = packageTask.resourceFile
                 if (null == resourceFile) {

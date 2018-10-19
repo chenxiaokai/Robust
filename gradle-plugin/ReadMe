@@ -1,0 +1,7 @@
+gradle-plugin 主要功能：
+
+1): 为reboust.xml 中指定的包下面的 java类 插桩，增加条状代码
+
+2): 创建 methodsMap.robust 文件，里面是 该文件在打补丁的时候用来区别到底哪些方法需要被修复，所以有它才能打补丁
+
+3): 为apk 创建唯一的 String 字符串 robust.apkhash

@@ -26,6 +26,20 @@ public final class RobustAsmUtils {
      */
     public static void createInsertCode(GeneratorAdapter mv, String className, List<Type> args, Type returnType, boolean isStatic, int methodId) {
         prepareMethodParameters(mv, className, args, returnType, isStatic, methodId);
+
+        /*
+          asm 生成字节码
+
+          例如: Activity 中的 public void onCreate(Bundle paramBundle) 的插桩
+
+        ChangeQuickRedirect localChangeQuickRedirect = n;
+        Class localClass = Void.TYPE;
+        if (PatchProxy.proxy(new Object[] { paramBundle }, this, localChangeQuickRedirect, false, 1, new Class[] { Bundle.class }, localClass).isSupported) {
+          return;
+        }
+
+         */
+
         //开始调用
         mv.visitMethodInsn(Opcodes.INVOKESTATIC,
                 PROXYCLASSNAME,

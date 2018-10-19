@@ -37,11 +37,15 @@ class RobustTransform extends Transform implements Plugin<Project> {
     @Override
     void apply(Project target) {
         project = target
+        //解析 app module 下面的 robust.xml 文件
         robust = new XmlSlurper().parse(new File("${project.projectDir}/${Constants.ROBUST_XML}"))
         logger = project.logger
         initConfig()
         //isForceInsert 是true的话，则强制执行插入
         if (!isForceInsert) {
+            //project.gradle.startParameter.taskNames 指的就是 gradlew 后面的参数， 例如 gradlew assembleRelease，gradlew :readercomponent:assembleRelease
+            //就分别对应 assembleRelease 和  :readercomponent:assembleRelease
+            //如果  gradlew assembleRelase  打印的是 "taskNames is [assembleRelease]"
             def taskNames = project.gradle.startParameter.taskNames
             def isDebugTask = false;
             for (int index = 0; index < taskNames.size(); ++index) {
@@ -55,8 +59,11 @@ class RobustTransform extends Transform implements Plugin<Project> {
                     break;
                 }
             }
+
+            //debug 生成的apk 不插桩
             if (!isDebugTask) {
                 project.android.registerTransform(this)
+                //Adds an action to execute immediately after this project is evaluated.
                 project.afterEvaluate(new RobustApkHashAction())
                 logger.quiet "Register robust transform successful !!!"
             }
@@ -77,10 +84,11 @@ class RobustTransform extends Transform implements Plugin<Project> {
         isHotfixMethodLevel = false;
         isExceptMethodLevel = false;
         /*对文件进行解析*/
-        for (name in robust.packname.name) {
+
+        for (name in robust.packname.name) { //需要热修复，插桩的包名
             hotfixPackageList.add(name.text());
         }
-        for (name in robust.exceptPackname.name) {
+        for (name in robust.exceptPackname.name) { //不需要热修复，不插桩的包名
             exceptPackageList.add(name.text());
         }
         for (name in robust.hotfixMethod.name) {
@@ -112,6 +120,7 @@ class RobustTransform extends Transform implements Plugin<Project> {
 
     }
 
+    //生成一个  :app:transformClassesWith{ getName() }For{ buildType } 一个 task 然后执行 transform() 方法
     @Override
     String getName() {
         return "robust"
@@ -138,6 +147,7 @@ class RobustTransform extends Transform implements Plugin<Project> {
         logger.quiet '================robust start================'
         def startTime = System.currentTimeMillis()
         outputProvider.deleteAll()
+        //E:\github\Robust-master\app\build\intermediates\transforms\robust\release\jars\1\1f\main.jar
         File jarFile = outputProvider.getContentLocation("main", getOutputTypes(), getScopes(),
                 Format.JAR);
         if(!jarFile.getParentFile().exists()){
@@ -149,6 +159,8 @@ class RobustTransform extends Transform implements Plugin<Project> {
 
         ClassPool classPool = new ClassPool()
         project.android.bootClasspath.each {
+            // bootClasspath = C:\Users\lenovo\AppData\Local\Android\Sdk\platforms\android-25\android.jar
+            // android.jar 加入 classPool
             classPool.appendClassPath((String) it.absolutePath)
         }
 
@@ -161,6 +173,7 @@ class RobustTransform extends Transform implements Plugin<Project> {
             insertcodeStrategy=new JavaAssistInsertImpl(hotfixPackageList,hotfixMethodList,exceptPackageList,exceptMethodList,isHotfixMethodLevel,isExceptMethodLevel);
         }
         insertcodeStrategy.insertCode(box, jarFile);
+        //将插桩的方法信息写入 robust/methodsMap.robust 文件中
         writeMap2File(insertcodeStrategy.methodMap, Constants.METHOD_MAP_OUT_PATH)
 
         logger.quiet "===robust print id start==="
@@ -176,6 +189,7 @@ class RobustTransform extends Transform implements Plugin<Project> {
     }
 
     private void writeMap2File(Map map, String path) {
+        //project.buildDir.path   E:\github\Robust-master\app\build\intermediates
         File file = new File(project.buildDir.path + path);
         if (!file.exists() && (!file.parentFile.mkdirs() || !file.createNewFile())) {
 //            logger.error(path + " file create error!!")

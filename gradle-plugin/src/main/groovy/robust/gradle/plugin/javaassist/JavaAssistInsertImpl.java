@@ -45,8 +45,9 @@ public class JavaAssistInsertImpl extends InsertcodeStrategy {
 //        new ForkJoinPool().submit {
         for (CtClass ctClass : box) {
             if (isNeedInsertClass(ctClass.getName())) {
-                //change class modifier
+                //change class modifier  改变类的访问修饰符为public
                 ctClass.setModifiers(AccessFlag.setPublic(ctClass.getModifiers()));
+                //1): 规避接口 和 无方法类
                 if (ctClass.isInterface() || ctClass.getDeclaredMethods().length < 1) {
                     //skip the unsatisfied class
                     zipFile(ctClass.toBytecode(), outStream, ctClass.getName().replaceAll("\\.", "/") + ".class");
@@ -54,9 +55,11 @@ public class JavaAssistInsertImpl extends InsertcodeStrategy {
                 }
 
                 boolean addIncrementalChange = false;
+                //得到所有的 构造函数 和 方法声明
+                //CtBehavior 代表 方法 构造函数 或 静态构造函数 它是 CtMethod 和 CtConstructor 的超类
                 for (CtBehavior ctBehavior : ctClass.getDeclaredBehaviors()) {
                     if (!addIncrementalChange) {
-                        //insert the field
+                        //insert the field    插入一个静态 com.meituan.robust.ChangeQuickRedirect 类型的 changeQuickRedirect 字段
                         addIncrementalChange = true;
                         ClassPool classPool = ctBehavior.getDeclaringClass().getClassPool();
                         CtClass type = classPool.getOrNull(Constants.INTERFACE_NAME);
@@ -68,20 +71,63 @@ public class JavaAssistInsertImpl extends InsertcodeStrategy {
                         continue;
                     }
                     //here comes the method will be inserted code
+                    //动态插入的方法 为每个插入的方法增加一个序列号
                     methodMap.put(ctBehavior.getLongName(), insertMethodCount.incrementAndGet());
                     try {
                         if (ctBehavior.getMethodInfo().isMethod()) {
                             CtMethod ctMethod = (CtMethod) ctBehavior;
+                            //判断是不是静态函数
                             boolean isStatic = (ctMethod.getModifiers() & AccessFlag.STATIC) != 0;
                             CtClass returnType = ctMethod.getReturnType();
                             String returnTypeString = returnType.getName();
                             //construct the code will be inserted in string format
                             String body = "Object argThis = null;";
                             if (!isStatic) {
+                                //非static $0 表示 this 指针，静态表示null
                                 body += "argThis = $0;";
                             }
                             String parametersClassType = getParametersClassType(ctMethod);
+                            // $args 表示插入方法的所有参数的数组
 //                                body += "   if (com.meituan.robust.PatchProxy.isSupport(\$args, argThis, ${Constants.INSERT_FIELD_NAME}, $isStatic, " + methodMap.get(ctBehavior.longName) + ",${parametersClassType},${returnTypeString}.class)) {"
+
+                            /*
+                                if (com.meituan.robust.PatchProxy.isSupport(
+                                        $args (表示插入方法的所有参数的数组),
+                                        argThis (非static $0 表示 this 指针，静态表示null),
+                                        changeQuickRedirect,
+                                        isStatic (是否是静态),
+                                        方法序号(robust.map中映射),
+                                        插入方法的参数列表Class类型,
+                                        插入方法返回类型Class类型) {
+
+
+
+                                 }
+
+                                例如: Activity 的 public void onCreate(Bundle paramBundle)  方法
+
+                                    if (com.meituan.robust.PatchProxy.isSupport(
+                                        new Object[] {paramBundle},
+                                        this,
+                                        changeQuickRedirect,
+                                        false,
+                                        1,
+                                        new Class[] {Bundle.class},
+                                        Void.TYPE
+                                    )) {
+                                             com.meituan.robust.PatchProxy.accessDispatchVoid(
+                                                 new Object[] {paramBundle},
+                                                 this,
+                                                 changeQuickRedirect,
+                                                 false ,
+                                                 1 ,
+                                                 new Class[] {Bundle.class},
+                                                 Void.TYPE );
+
+                                             return null;
+                                    }
+                             */
+
                             body += "   if (com.meituan.robust.PatchProxy.isSupport($args, argThis, " + Constants.INSERT_FIELD_NAME + ", " + isStatic +
                                     ", " + methodMap.get(ctBehavior.getLongName()) + "," + parametersClassType + "," + returnTypeString + ".class)) {";
                             body += getReturnStatement(returnTypeString, isStatic, methodMap.get(ctBehavior.getLongName()), parametersClassType, returnTypeString + ".class");
@@ -104,6 +150,7 @@ public class JavaAssistInsertImpl extends InsertcodeStrategy {
     }
 
     private boolean isQualifiedMethod(CtBehavior it) throws CannotCompileException {
+        //是否是静态初始化
         if (it.getMethodInfo().isStaticInitializer()) {
             return false;
         }
@@ -112,16 +159,19 @@ public class JavaAssistInsertImpl extends InsertcodeStrategy {
         if ((it.getModifiers() & AccessFlag.SYNTHETIC) != 0 && !AccessFlag.isPrivate(it.getModifiers())) {
             return false;
         }
+        //不支持构造方法
         if (it.getMethodInfo().isConstructor()) {
             return false;
         }
-
+        //规避抽象方法
         if ((it.getModifiers() & AccessFlag.ABSTRACT) != 0) {
             return false;
         }
+        //规避NATIVE方法
         if ((it.getModifiers() & AccessFlag.NATIVE) != 0) {
             return false;
         }
+        //规避接口
         if ((it.getModifiers() & AccessFlag.INTERFACE) != 0) {
             return false;
         }
@@ -130,6 +180,7 @@ public class JavaAssistInsertImpl extends InsertcodeStrategy {
             if (AccessFlag.isPackage(it.getModifiers())) {
                 it.setModifiers(AccessFlag.setPublic(it.getModifiers()));
             }
+            //判断是否有方法调用，返回是否插庄
             boolean flag = isMethodWithExpression((CtMethod) it);
             if (!flag) {
                 return false;
@@ -257,9 +308,11 @@ public class JavaAssistInsertImpl extends InsertcodeStrategy {
     /**
      * 根据传入类型判断调用PathProxy的方法
      *
-     * @param type         返回类型
-     * @param isStatic     是否是静态方法
-     * @param methodNumber 方法数
+     * @param type         插入方法的返回类型
+     * @param isStatic     插入方法的是否是静态方法
+     * @param methodNumber 插入方法的方法数在robust.map中
+     * @param parametersClassType   插入方法的参数列表
+     * @param returnTypeString     插入方法的返回类型的Class对象
      * @return 返回return语句
      */
     private String getReturnStatement(String type, boolean isStatic, int methodNumber, String parametersClassType, String returnTypeString) {
