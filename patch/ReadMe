@@ -1,0 +1,70 @@
+1):
+    PatchesInfoImpl 这个类是补丁的描述问题，在这个类里面的内容如下：
+
+    public class PatchesInfoImpl implements PatchesInfo {
+        public List getPatchedClassesInfo() {
+            List arrayList = new ArrayList();
+            arrayList.add(new PatchedClassInfo("com.meituan.sample.robusttest.l", "com.meituan.robust.patch.SampleClassPatchControl"));
+            arrayList.add(new PatchedClassInfo("com.meituan.sample.robusttest.p", "com.meituan.robust.patch.SuperPatchControl"));
+            arrayList.add(new PatchedClassInfo("com.meituan.sample.SecondActivity", "com.meituan.robust.patch.SecondActivityPatchControl"));
+            EnhancedRobustUtils.isThrowable = false;
+            return arrayList;
+        }
+    }
+
+    PatchedClassInfo 这个类的是混淆后的类名和补丁中转发器的映射关系，比如代码中的第一个结构体PatchedClassInfo的内容，
+    就是把类com.meituan.sample.robusttest.l中的所有方法转发到com.meituan.robust.patch.SampleClassPatchControl，
+    xxPatchControl类被我们称为转发器，负责把方法转发到对应的补丁方法
+
+2):
+    xxPatchControl 类的结构:
+
+    public class SampleClassPatchControl implements ChangeQuickRedirect {
+
+     private static final Map<Object, Object> keyToValueRelation;
+
+     public boolean isSupport(String methodName, Object[] paramArrayOfObject) {
+         return "66:".contains(methodName.split(":")[3]);
+     }
+
+     public Object accessDispatch(String methodName, Object[] paramArrayOfObject) {
+             SampleClassPatch sampleClassPatch;
+             if (methodName.split(":")[2].equals("false")) {
+                 SampleClassPatch sampleClassPatch2;
+                 if (keyToValueRelation.get(paramArrayOfObject[paramArrayOfObject.length - 1]) == null) {
+                     sampleClassPatch2 = new SampleClassPatch(paramArrayOfObject[paramArrayOfObject.length - 1]);
+                     keyToValueRelation.put(paramArrayOfObject[paramArrayOfObject.length - 1], sampleClassPatch2);
+                 } else {
+                     sampleClassPatch2 = (SampleClassPatch) keyToValueRelation.get(paramArrayOfObject[paramArrayOfObject.length - 1]);
+                 }
+                 sampleClassPatch = sampleClassPatch2;
+             } else {
+                 sampleClassPatch = new SampleClassPatch(null);
+             }
+             if ("66".equals(methodName.split(":")[3])) {
+                 return Integer.valueOf(sampleClassPatch.multiple(((Integer) paramArrayOfObject[0]).intValue()));
+             }
+             return null;
+        }
+    }
+
+    首先会先调用isSupport方法，这个方法主要的职责是负责确定一个方法是否需要被转发，不被转发就意味着这个方法还是执行原始apk中的逻辑；
+    如果被转发，则会调用accessDispatch方法，accessDispatch方法会对环境进行一些初始化之后（创建了一一对应的补丁类xxPatch的instance），
+    调用补丁类中的响应方法。 tips:为什么isSupport中是66呢？这是因为我们对每个方法进行了编号，这是方法转发的依据，只有编号匹配才可以转发，
+    这样就避免了方法签名的匹配。
+
+3):
+    xxPatch这个结尾的类，这个是补丁类，包含了修复bug的全部逻辑代码，这部分代码比较多，这个包含的主要代码就是对改动类的一次翻译：
+    把改动方法中调用的方法和字段访问全部改为了反射调用，同时要解决Proguard造成的混淆、以及内联的问题。这块属于自动化补丁的重点和难点，
+    有意请多多查看源码，表示这块比较复杂。
+
+
+4):
+    xxInLinePatch这个类是为了处理内联问题而产生的，内联导致了某个方法神奇的“消失”了，我们就把这个消失的代码放到了xxInLinePatch中
+
+
+5):
+    XXPatchRobustAssist这个类别是为解决super问题而引入的解决办法
+
+6):
+    最后一种是新增类的，Add注解加在那个类上，就会把这个类放入补丁内部。

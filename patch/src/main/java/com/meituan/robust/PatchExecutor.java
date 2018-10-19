@@ -87,6 +87,7 @@ public class PatchExecutor extends Thread {
             return false;
         }
 
+        //加载补丁的 DexClassLoader 类
         DexClassLoader classLoader = new DexClassLoader(patch.getTempPath(), context.getCacheDir().getAbsolutePath(),
                 null, PatchExecutor.class.getClassLoader());
         patch.delete(patch.getTempPath());
@@ -97,6 +98,10 @@ public class PatchExecutor extends Thread {
         PatchesInfo patchesInfo = null;
         try {
             Log.d("robust", "PatchsInfoImpl name:" + patch.getPatchesInfoImplClassFullName());
+
+
+            //https://github.com/Meituan-Dianping/Robust/wiki/Robust%E4%BB%A3%E7%A0%81%E7%BB%93%E6%9E%84
+            //加载 com.meituan.robust.patch.PatchesInfoImpl 在补丁包中
             patchsInfoClass = classLoader.loadClass(patch.getPatchesInfoImplClassFullName());
             patchesInfo = (PatchesInfo) patchsInfoClass.newInstance();
             Log.d("robust", "PatchsInfoImpl ok");
@@ -120,6 +125,8 @@ public class PatchExecutor extends Thread {
 
         for (PatchedClassInfo patchedClassInfo : patchedClasses) {
             String patchedClassName = patchedClassInfo.patchedClassName;
+
+            //patchClassName 是 实现了ChangeQuickRedirect 接口的类
             String patchClassName = patchedClassInfo.patchClassName;
             if (TextUtils.isEmpty(patchedClassName) || TextUtils.isEmpty(patchClassName)) {
                 robustCallBack.logNotify("patchedClasses or patchClassName is empty, patch info:" + "id = " + patch.getName() + ",md5 = " + patch.getMd5(), "class:PatchExecutor method:patch line:131");
@@ -132,7 +139,8 @@ public class PatchExecutor extends Thread {
                 Log.d("robust", "oldClass :" + oldClass + "     fields " + fields.length);
                 Field changeQuickRedirectField = null;
                 for (Field field : fields) {
-                    if (TextUtils.equals(field.getType().getCanonicalName(), ChangeQuickRedirect.class.getCanonicalName()) && TextUtils.equals(field.getDeclaringClass().getCanonicalName(), oldClass.getCanonicalName())) {
+                    if (TextUtils.equals(field.getType().getCanonicalName(), ChangeQuickRedirect.class.getCanonicalName()) &&
+                            TextUtils.equals(field.getDeclaringClass().getCanonicalName(), oldClass.getCanonicalName())) {
                         changeQuickRedirectField = field;
                         break;
                     }

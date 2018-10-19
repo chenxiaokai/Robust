@@ -37,7 +37,7 @@ import java.util.List;
 public class PatchManipulateImp extends PatchManipulate {
     /***
      * connect to the network ,get the latest patches
-     * l联网获取最新的补丁
+     * 联联网获取最新的补丁
      * @param context
      *
      * @return
@@ -48,7 +48,10 @@ public class PatchManipulateImp extends PatchManipulate {
         //apkhash is the unique identifier for  apk,so you cannnot patch wrong apk.
         String robustApkHash = RobustApkHashUtils.readRobustApkHash(context);
         Log.w("robust","robustApkHash :" + robustApkHash);
+
         //connect to network to get patch list on servers
+
+
         //在这里去联网获取补丁列表
         Patch patch = new Patch();
         patch.setName("123");

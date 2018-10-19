@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // 加载补丁
     private void runRobust() {
         new PatchExecutor(getApplicationContext(), new PatchManipulateImp(), new RobustCallBackSample()).start();
     }

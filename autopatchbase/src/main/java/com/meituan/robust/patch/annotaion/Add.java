@@ -12,6 +12,8 @@ import java.lang.annotation.Target;
  * annotaion used for add classes or methods,classes and methods will be packed into patch.jar/patch.apk
  */
 
+//这是自动化补丁使用的注解，用来标记新增的类和方法，目前还不支持新增字段。
+
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.TYPE, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.CLASS)
 @Documented
