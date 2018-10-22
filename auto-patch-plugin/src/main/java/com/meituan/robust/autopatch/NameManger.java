@@ -12,6 +12,7 @@ import java.util.HashMap;
 
 public class NameManger {
     private static NameManger nameManger;
+    //xxInLinePath 或者 xxPatch ->  正常类 映射
     private HashMap<String, String> patchNameMap = new HashMap();
 
     private NameManger() {
@@ -50,6 +51,7 @@ public class NameManger {
     }
 
     public String getInlinePatchNameWithoutRecord(String className) {
+        // com.meituan.robust.patch+"."+SecondActivity+InLinePatch
         String patchName = Config.patchPackageName + "." + className.substring(className.lastIndexOf(".") + 1) + Constants.INLINE_PATCH_SUFFIX;
         return patchName;
     }

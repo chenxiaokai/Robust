@@ -45,7 +45,9 @@ public class SmaliTool {
 
     }
 
+    //对于混淆这部分处理思路并不困难，可以在Smali汇编语言那层做字符串的替换，不过需要确保不会引入其他问题，这部分操作需要慎重
     public void dealObscureInSmali() {
+        // diretory 是 E:\github\Robust-master\app\build\output\robust\classout\com\meituan\robust\patch
         File diretory = new File(Config.robustGenerateDirectory + "classout" + File.separator + Config.patchPackageName.replaceAll("\\.", Matcher.quoteReplacement(File.separator)));
         if (!diretory.isDirectory() || diretory == null) {
             throw new RuntimeException(Config.robustGenerateDirectory + Config.patchPackageName.replaceAll(".", Matcher.quoteReplacement(File.separator)) + " contains no smali file error!! ");
@@ -92,6 +94,8 @@ public class SmaliTool {
         }
     }
 
+    //directory E:\github\Robust-master\app\build\output\robust\classout
+    //packNameList  有@Add注解在类上 的类名称集合
     private List<File> covertPathToFile(String directory, List<String> packNameList) {
         if (packNameList == null) {
             return new ArrayList<>();
@@ -103,6 +107,7 @@ public class SmaliTool {
         return fileList;
     }
 
+    //line 是 fullClassName 每一行的内容
     private String dealWithSmaliLine(final String line, String fullClassName) {
 
         if (null == line || line.length() < 1 || line.startsWith("#")) {
@@ -206,16 +211,24 @@ public class SmaliTool {
 
     private String invokeSuperMethodInSmali(final String line, String fullClassName) {
 
+        //smali 方法开头 以 .method 开发
+        //例如: .method public static staticRobustonCreate(Lcom/meituan/robust/patch/  smali中一行
         if (line.startsWith(".method public static staticRobust")) {
             isInStaticRobustMethod = true;
         }
         String result = line;
         String returnType;
+
+        //fullClassName 调用父类方法集合
         List<CtMethod> invokeSuperMethodList = invokeSuperMethodMap.get(NameManger.getInstance().getPatchNameMap().get(fullClassName));
+
+
         if (isInStaticRobustMethod && line.contains(Constants.SMALI_INVOKE_VIRTUAL_COMMAND)) {
             for (CtMethod ctMethod : invokeSuperMethodList) {
                 //java method signure
                 if ((ctMethod.getName().replaceAll("\\.", "/") + ctMethod.getSignature().subSequence(0, ctMethod.getSignature().indexOf(")") + 1)).equals(getMethodSignureInSmaliLine(line))) {
+                    //invoke-virtual：用于调用protected或public函数
+                    //invoke-super：调用父类方法，在onCreate、onDestroy等方法都能看到。
                     result = line.replace(Constants.SMALI_INVOKE_VIRTUAL_COMMAND, Constants.SMALI_INVOKE_SUPER_COMMAND);
                     try {
                         if (!ctMethod.getReturnType().isPrimitive()) {
@@ -224,6 +237,9 @@ public class SmaliTool {
                             returnType = String.valueOf(((CtPrimitiveType) ctMethod.getReturnType()).getDescriptor());
                         }
                         if (NameManger.getInstance().getPatchNameMap().get(fullClassName).equals(fullClassName)) {
+                            //参数寄存器(parameter register)用p开头数字结尾的符号来表示，如p0、p1、p2、…，
+                            //在实例函数中，p0代指“this”，p1表示函数的第一个参数，p2代表函数中的第二个参数…，
+                            //在static函数中，p1表示函数的第一个参数，p2代表函数中的第二个参数…，因为Java的static方法中没有this方法。
                             result = result.replace("p0", "p1");
                         }
                         String fullClassNameInSmali = ctMethod.getDeclaringClass().getClassPool().get(fullClassName).getSuperclass().getName().replaceAll("\\.", "/");
@@ -238,6 +254,8 @@ public class SmaliTool {
                 }
             }
         }
+
+        //smali中方法结束 以 .end method 结尾
         if (isInStaticRobustMethod && line.startsWith(".end method")) {
             isInStaticRobustMethod = false;
         }

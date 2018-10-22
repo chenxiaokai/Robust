@@ -1,0 +1,78 @@
+================autoPatch start================
+autopatch read all class file cost 0.021 second
+check all class cost 0.12 second, class count: 2850
+new add methods  list is
+key is   com.meituan.sample.SecondActivity.getArray()
+
+new add classes list is
+
+ patchMethodSignatureSet is printed below
+key is   com.meituan.sample.SecondActivity.getTextInfo()
+
+Warning: getObscuredMemberName  class  name java.util.WeakHashMap   member name is  void <init>()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatchControl   member name is  keyToValueRelation  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.Object   member name is  void <init>()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.Byte   member name is  byte byteValue()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.Boolean   member name is  void <init>(boolean)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.String   member name is  java.lang.String split(java.lang.String)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.String   member name is  boolean equals(java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatchControl   member name is  keyToValueRelation  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.util.Map   member name is  java.lang.Object get(java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatch   member name is  void <init>(java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatchControl   member name is  keyToValueRelation  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.util.Map   member name is  java.lang.Object put(java.lang.Object,java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.String   member name is  java.lang.String split(java.lang.String)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.String   member name is  boolean equals(java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatch   member name is  java.lang.String getTextInfo()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatchControl   member name is  keyToValueRelation  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.util.Map   member name is  java.lang.Object get(java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatch   member name is  void <init>(java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.Throwable   member name is  void printStackTrace()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatch   member name is  void <init>(java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.String   member name is  java.lang.String split(java.lang.String)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.StringBuffer   member name is  void <init>()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.StringBuffer   member name is  java.lang.StringBuffer append(java.lang.String)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.StringBuffer   member name is  java.lang.StringBuffer append(java.lang.String)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.StringBuffer   member name is  java.lang.StringBuffer append(java.lang.String)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.StringBuffer   member name is  java.lang.String toString()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.String   member name is  boolean contains(java.lang.CharSequence)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.Object   member name is  void <init>()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.util.ArrayList   member name is  void <init>()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.util.List   member name is  boolean add(java.lang.Object)  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name java.lang.Object   member name is  void <init>()  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatch   member name is  originClass  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatch   member name is  java.lang.Object getRealParameter(java.lang.Object[])  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatch   member name is  originClass  robust can not find in mapping!!!
+Warning: getObscuredMemberName  class  name com.meituan.robust.patch.SecondActivityPatch   member name is  originClass  robust can not find in mapping!!!
+================method singure to methodid is printed below================
+key is   com.meituan.sample.PatchManipulateImp.verifyPatch(android.content.Context,com.meituan.robust.Patch)  value is    11
+key is   com.meituan.sample.RobustCallBackSample.onPatchListFetched(boolean,boolean,java.util.List)  value is    16
+key is   com.meituan.sample.SecondActivity.onCreateView(java.lang.String,android.content.Context,android.util.AttributeSet)  value is    24
+key is   com.meituan.sample.MainActivity.runRobust()  value is    9
+key is   com.meituan.sample.RobustCallBackSample.exceptionNotify(java.lang.Throwable,java.lang.String)  value is    20
+key is   com.meituan.sample.MainActivity.handlePermissionResult()  value is    8
+key is   com.meituan.sample.RobustCallBackSample.logNotify(java.lang.String,java.lang.String)  value is    19
+key is   com.meituan.sample.SecondActivity.onCreate(android.os.Bundle)  value is    22
+key is   com.meituan.sample.SecondActivity.getFieldValue(java.lang.String,java.lang.Object)  value is    27
+key is   com.meituan.sample.MainActivity$3.onClick(android.view.View)  value is    3
+key is   com.meituan.sample.MainActivity.onRequestPermissionsResult(int,java.lang.String[],int[])  value is    7
+key is   com.meituan.sample.RobustCallBackSample.onPatchApplied(boolean,com.meituan.robust.Patch)  value is    18
+key is   com.meituan.sample.PermissionUtils.requestSDCardReadPermission(android.app.Activity,int)  value is    15
+key is   com.meituan.sample.PatchManipulateImp.fetchPatchList(android.content.Context)  value is    10
+key is   com.meituan.sample.SecondActivity.getTextInfo()  value is    23
+key is   com.meituan.sample.PermissionUtils.checkSelfPermission(android.content.Context,java.lang.String)  value is    13
+key is   com.meituan.sample.PatchManipulateImp.copy(java.lang.String,java.lang.String)  value is    12
+key is   com.meituan.sample.RobustCallBackSample.onPatchFetched(boolean,boolean,com.meituan.robust.Patch)  value is    17
+key is   com.meituan.sample.SecondActivity.getReflectField(java.lang.String,java.lang.Object)  value is    26
+key is   com.meituan.sample.PermissionUtils.isGrantSDCardReadPermission(android.content.Context)  value is    14
+key is   com.meituan.sample.MainActivity$2.onClick(android.view.View)  value is    2
+key is   com.meituan.sample.SecondActivity.lambda$onCreate$0(android.view.View)  value is    28
+key is   com.meituan.sample.MainActivity.isGrantSDCardReadPermission()  value is    5
+key is   com.meituan.sample.MainActivity.requestPermission()  value is    6
+key is   com.meituan.sample.MainActivity.onCreate(android.os.Bundle)  value is    4
+key is   com.meituan.sample.SecondActivity$$Lambda$1.onClick(android.view.View)  value is    21
+key is   com.meituan.sample.SecondActivity.onClick(android.view.View)  value is    25
+key is   com.meituan.sample.MainActivity$1.onClick(android.view.View)  value is    1
+
+autoPatch cost 2.024 second
+:app:transformClassesWithAutoPatchTransformForRelease FAILED

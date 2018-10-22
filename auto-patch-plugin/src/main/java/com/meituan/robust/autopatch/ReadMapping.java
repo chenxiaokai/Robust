@@ -17,6 +17,7 @@ import java.util.Map;
 public class ReadMapping {
     private static ReadMapping instance;
 
+    //key 为混淆前类全名(com.example.package.Demo) value 为ClassMapping.memberMapping 为demo中所有 字段 方法 混淆的 map对应
     private Map<String, ClassMapping> usedInModifiedClassMappingInfo = new HashMap<String, ClassMapping>();
 
     public static ReadMapping getInstance() {
@@ -45,10 +46,14 @@ public class ReadMapping {
         boolean needBacktrace = true;
         String line;
         try {
+            //读取 app/robust/mapping.txt 文件
+            // mapping.txt 文件 带冒号结尾 是当前 混淆对象， 冒号后面没有冒号结尾的，是当前混淆对象的 字段 方法 混淆前 和 混淆后 对照
             is = new FileInputStream(Config.mappingFilePath);
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"), 1024);
             // 读取一行，存储于字符串列表中
             line = reader.readLine().trim();
+
+
             while (line != null) {
                 line = line.trim();
                 if (!needBacktrace) {
@@ -61,11 +66,12 @@ public class ReadMapping {
                 needBacktrace = false;
                 if (line.indexOf("->") > 0 && line.indexOf(":") == line.length() - 1) {
                     ClassMapping classMapping = new ClassMapping();
-                    classMapping.setClassName(line.substring(0, line.indexOf("->") - 1).trim());
-                    classMapping.setValueName(line.split("->")[1].substring(0, line.split("->")[1].length() - 1).trim());
+                    classMapping.setClassName(line.substring(0, line.indexOf("->") - 1).trim());  // -> 左边的值
+                    classMapping.setValueName(line.split("->")[1].substring(0, line.split("->")[1].length() - 1).trim());  // -> 右边的值
                     line = reader.readLine();
                     while (line != null) {
                         line = line.trim();
+
                         if (line.endsWith(":")) {
                             needBacktrace = true;
                             break;
@@ -87,6 +93,8 @@ public class ReadMapping {
                         }
                         line = line.trim();
                     }
+
+                    //mapping.txt中 每个以 冒号(:) 结尾的 对应的内部 字段 方法 映射 对应一个 ClassMapping
                     usedInModifiedClassMappingInfo.put(classMapping.getClassName(), classMapping);
                 }
             }
