@@ -11,8 +11,9 @@ public class ClassMapping {
     //method 存储的信息有：返回值，方法名，参数列表，混淆后的名字
     //字段 存储的信息有：字段名，混淆后的名字
 
-    private String className;
-    private String valueName;
+    private String className;  //混淆前类名
+    private String valueName;  //混淆后类名
+    //存放method和field 混淆前  和 混淆后  对应关系
     private Map<String, String> memberMapping = new HashMap<>();
 
     public String getClassName() {

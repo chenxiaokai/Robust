@@ -8,7 +8,7 @@ import javassist.expr.ExprEditor
 import javassist.expr.MethodCall
 
 class InlineClassFactory {
-    //内联类为key，value 是内类中的所有内联方法集合
+    //内联类为key，value 是内联类中的所有内联方法集合
     private HashMap<String, List<String>> classInLineMethodsMap = new HashMap<>();
     private static InlineClassFactory inlineClassFactory = new InlineClassFactory();
 
@@ -50,6 +50,7 @@ class InlineClassFactory {
 
 
         //all inline patch class   inLineClassNameSet为所有内联类集合,里面内联类是有些方法内联并被消除了
+        //创建内联类
         createHookInlineClass(inLineClassNameSet)
 
 
@@ -82,6 +83,7 @@ class InlineClassFactory {
         }
     }
 
+    //xxInLinePatch这个类是为了处理内联问题而产生的，内联导致了某个方法神奇的“消失”了，我们就把这个消失的代码放到了xxInLinePatch中
     def createHookInlineClass(Set inLineClassNameSet) {
         for (String fullClassName : inLineClassNameSet) {
             CtClass inlineClass = Config.classPool.get(fullClassName);
@@ -142,6 +144,7 @@ class InlineClassFactory {
         CtClass modifiedCtclass;
         Set <String>allPatchMethodSignureSet = new HashSet();
         boolean isNewClass=false;
+
         for (String fullClassName : classNamesSet) {
             if(patchMethodSignureSet!=null) {
                 allPatchMethodSignureSet.addAll(patchMethodSignureSet);
@@ -171,6 +174,7 @@ class InlineClassFactory {
                                 //查看混淆映射文件中(mapping.txt)，查看mapping.txt中没有混淆的方法，是否有对应的混淆方法，如果没有，说明方法已经被内联删除了
                                 if (null != classMapping && classMapping.memberMapping.get(ReflectUtils.getJavaMethodSignureWithReturnType(m.method)) == null) {
                                         inLineClassNameSet.add(m.method.declaringClass.name);
+
                                     if (!inLineMethodList.contains(m.method.longName)) {
                                         //内联方法集合
                                         inLineMethodList.add(m.method.longName);

@@ -14,6 +14,7 @@ class ReadXML {
             Config.patchPackageName = robust.patchPackname.name.text()
 
         Config.isManual = robust.switch.manual != null && "true" == String.valueOf(robust.switch.manual.text())
+
         //读取mapping文件
         if (robust.switch.proguard.text() != null && "" != robust.switch.proguard.text())
             Config.supportProGuard = Boolean.valueOf(robust.switch.proguard.text()).booleanValue();
@@ -21,6 +22,7 @@ class ReadXML {
         if (robust.mappingFile.name.text() != null && "" != robust.mappingFile.name.text()) {
             Config.mappingFilePath = robust.mappingFile.name.text()
         } else {
+            //E:\github\Robust-master\app\robust\mapping.txt
             Config.mappingFilePath = "${path}${Constants.DEFAULT_MAPPING_FILE}"
         }
 

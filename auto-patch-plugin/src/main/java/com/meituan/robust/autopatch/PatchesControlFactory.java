@@ -23,6 +23,7 @@ public class PatchesControlFactory {
 
     }
 
+    //生成 PatchesInfoImpl、xxxPatchControl 写入补丁信息和控制补丁行为。
     private CtClass createControlClass(CtClass modifiedClass) throws Exception {
         CtClass patchClass = classPool.get(NameManger.getInstance().getPatchName(modifiedClass.getName()));
         patchClass.defrost();

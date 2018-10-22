@@ -34,7 +34,7 @@ public final class Config {
 
     public static List<String> newlyAddedClassNameList = new ArrayList<String>();  //有@Add注解在类上 的类名称集合
 
-    public static Set newlyAddedMethodSet = new HashSet<String>();  //有@Add注解在类方法上 方法签名集合
+    public static Set newlyAddedMethodSet = new HashSet<String>();  //有@Add注解在方法上 方法签名集合
 
     public static List<String> modifiedClassNameList = new ArrayList<String>();  //有@Modify注解在方法上的类名称的集合
 
@@ -42,7 +42,7 @@ public final class Config {
 
     public static LinkedHashMap<String, Integer> methodMap = new LinkedHashMap<>();  //打桩方法添加标识的 map对象 key是方法签名  value是 方法的数字唯一表示
 
-    public static  String robustGenerateDirectory;  //// E:\github\Robust-master\app\build\output\robust\
+    public static  String robustGenerateDirectory;  // E:\github\Robust-master\app\build\output\robust\
 
     public static Map<String, List<CtMethod>> invokeSuperMethodMap = new HashMap<>();
     public static ClassPool classPool = new ClassPool();

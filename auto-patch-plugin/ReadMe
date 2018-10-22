@@ -1,0 +1,86 @@
+补丁包生成的过程问题:
+
+    1): java 编译器的优化的两个点
+        a): Java编译器的优化工作包括Java编译器会自动生成一些桥方法以及移动代码的位置等，比较典型的就是泛型方法、内部类和Lambda表达式。
+            补丁自动化的过程中使用注解来标注需要补丁的方法，所以当Java编译器针对泛型移动代码时，注解也会被移动，直接导致补丁上线后无法修复问题。
+            以Java编译器对泛型方法的处理为例，Java编译器会为泛型方法生成一个桥方法（在桥方法里面调用真正的方法，桥方法的参数是object的类型，注意这类桥方法Robust热更新系统并没有对其插桩），
+            同时Java编译器把原方法上的注解移动到桥方法上，针对泛型方法制作补丁时，就变成了针对泛型方法的桥方法制作补丁了。Lambda也类似。
+
+        解决a问题:
+            为了解决上述的问题，自动化提供了一个静态方法（Robust.modify()），支持在泛型或者Lambda表达式里面调用这个静态方法，自动化扫描所有的方法调用，
+            检测到这个静态方法的调用就就可以找到找到需要制作补丁的方法。
+
+        b): 对于构造方法是私有的内部类，Java编译器也会生成一个包访问性的构造方法，以便于外部类访问，如下例:
+            public class Sample{
+                public  int multiple(int number) {
+                    Children pair=new Children("1");
+                    pair.setFirst("asdad");
+                    number= changeInputs(number);
+                    return times*number;
+                }
+
+               class Children{
+                    private String first=null;
+                    private Children(String fir){
+                        this.first=fir;
+                        setFirst("1");
+
+                    }
+                    public void setFirst(String fir){
+                        this.first=fir;
+                    }
+                }
+             }
+
+            我们在multiple(int number)里面创建了一个内部类的对象，其中内部类的方法是私有的，如果这样写，Java编译是不会报错的，但是反编译发现
+            这里出现了两个构造方法，编译器自动生成了一个包访问性的构造方法，不过传进来的小尾com.meituan.sample.SampleClass$1就是一个空的类，
+            只有类的定义，其他的啥也没有。
+
+            如果事情都是这么简单就好了，这个问题也不难用反射来解决，但是这边存在着两个问题：
+                像这种匿名内部类名字（数字部分）可能会随着每次打包发生改变的。
+                当项目中ProGuard力度比较大的时候，内部类的构造方法的访问性会被修改为public，然后编译器生成的方法被优化掉。
+
+         解决b问题:
+            为了避免反射的方法找不到，只好采取一种保守的措施，制作补丁的时候把内部类构造方法的访问性改为public，然后直接反射这个public的构造函数
+
+
+     2): ProGuard的优化问题
+        ProGuard做的工作基本主要包含：压缩、优化、混淆以及最后的校验。体现到代码层面上做的事情就是：混淆类名、方法名、字段名，修改方法、字段访问性，
+        删除方法（上例中内部类的构造方法），方法的内联，甚至是减少方法的参数（这就改变了方法签名）等等
+
+        而对于内联问题的处理，就有点麻烦，因为内联（ProGuard优化工作可以被当做内联来统一处理）的方法在最终的Apk中是不存在的，所以需要略施小计，把消失的方法给“补”上来。
+
+        c): 混淆后反射方法不正确的问题:
+            对于ProGuard修改访问性的问题，使用反射的方式可以很好地解决这个问题，但是这样可能会引入一个问题，由于ProGuard之后，
+            各个方法和字段的名字混淆为简单字母，比如a、b之类的，子类和父类很大可能行会出现不同的方法或者字段被混淆成一样简单字母。如下例：
+            public class Parent {
+                    private String first=null;
+                    //privateMethod 混淆为c
+                    private void privateMethod(String fir){
+                        System.out.println(fir);
+                    }
+                    //setFirst 混淆为b
+                    public void setFirst(String fir){
+                        first=fir;
+                        Parent children=new Children();
+                        children.privateMethod("Robust");
+                    }
+                }
+                public class Children extends Parent{
+                    private String sencod=null;
+                    //setSecond 混淆为c
+                    public void setSecond(String fir){
+                        this.sencod=fir;
+                    }
+                }
+                设想这样一种情况，如果我们对Parent的setFirst方法制作补丁，自然而然就会对children.privateMethod方法反射，此时privateMethod被混淆成为c，
+                此时当前的对象实际类型是Children，此时在children实例上反射方法c的话，会反射到哪里呢？反射到了setSecond，这和预期是不一致的，
+                我们想要反射的privateMethod方法。
+
+         解决c问题：
+            这个问题的解决办法就是在反射的时候，加强对反射条件限制，强制校验反射的方法或者字段的声明类，如果在反射的时候就知道方法c是类Parent中的方法的话，
+            就可以解决这个问题，在反射的时候就需要多传递一个方法的声明类。
+
+        d):
+          这个问题的解决办法就是在反射的时候，加强对反射条件限制，强制校验反射的方法或者字段的声明类，如果在反射的时候就知道方法c是类Parent中的方法的话，
+          就可以解决这个问题，在反射的时候就需要多传递一个方法的声明类。

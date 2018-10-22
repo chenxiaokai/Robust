@@ -24,12 +24,17 @@ class PatchesFactory {
     }
 
     /****
-     * @param modifiedClass
-     * @param isInline
-     * @param patchName
-     * @param patchMethodSignureSet methods need patch,if patchMethodSignatureSet length is 0,then will patch all methods in modifiedClass
+     * @param modifiedClass  内联类
+     * @param isInline      true
+     * @param patchName     以InLinePatch的后缀的 .java文件
+     * @param patchMethodSignureSet
+     *              内联类中的所有内联方法集合
+     *             methods need patch,if patchMethodSignatureSet length is 0,then will patch all methods in modifiedClass
+     * @param patchPath  补丁生成的路径
      * @return
      */
+    //这段代码其实是这个插件的核心部分，总体来说就是将修改后的代码全部翻译成反射调用生成 xxxPatch 类
+    //我们先只关注method.instrument()这个方法，这个Javassist的API，作用是遍历方法中的代码逻辑
     private CtClass createPatchClass(CtClass modifiedClass, boolean isInline, String patchName, Set patchMethodSignureSet, String patchPath) throws CannotCompileException, IOException, NotFoundException {
         List methodNoNeedPatchList = new ArrayList();
         //just keep  methods need patch
@@ -74,8 +79,12 @@ class PatchesFactory {
             //  shit !!too many situations need take into  consideration
             //   methods has methodid   and in  patchMethodSignatureSet
             if (!Config.addedSuperMethodList.contains(method) && reaLParameterMethod != method && !method.getName().startsWith(Constants.ROBUST_PUBLIC_SUFFIX)) {
+
+
                 method.instrument(
                         new ExprEditor() {
+
+                            //FieldAccess，字段访问操作。分为字段读和写两种，分别调用ReflectUtils.getFieldString方法，将代码逻辑使用Javassist翻译成反射调用，然后替换。
                             public void edit(FieldAccess f) throws CannotCompileException {
                                 if (Config.newlyAddedClassNameList.contains(f.getClassName())) {
                                     return;
@@ -93,7 +102,12 @@ class PatchesFactory {
                                 }
                             }
 
+                            /*
+                            NewExpr，new 对象操作。也分为两种
 
+                                非静态内部类，调用ReflectUtils.getNewInnerClassString翻译成反射，然后替换
+                                外部类，调用ReflectUtils.getCreateClassString翻译成反射，然后替换
+                             */
                             @Override
                             void edit(NewExpr e) throws CannotCompileException {
                                 //inner class in the patched class ,not all inner class
@@ -113,6 +127,7 @@ class PatchesFactory {
                                 e.replace(ReflectUtils.getCreateClassString(e, getClassValue(e.getClassName()), temPatchClass.getName(), ReflectUtils.isStatic(method.getModifiers())));
                             }
 
+                            //Cast，强转操作。调用ReflectUtils.getCastString翻译成反射，然后替换
                             @Override
                             void edit(Cast c) throws CannotCompileException {
                                 MethodInfo thisMethod = ReflectUtils.readField(c, "thisMethod");
@@ -129,6 +144,14 @@ class PatchesFactory {
                                 }
                             }
 
+                            /*
+                            MethodCall，方法调用操作。情况比较复杂，以下几种情形
+
+                                1): lamda表达式，调用ReflectUtils.getNewInnerClassString生成内部类的方法并翻译成反射，然后替换
+                                2): 修改的方法是内联方法，调用ReflectUtils.getInLineMemberString方法生成占位内联类xxInLinePatch，并在改类中把修改的方法翻译成反射，然后替换调用，这方法中又有一些其他情况判断，感兴趣的读者可以自行阅读
+                                3): 如果是super方法，这个情况后面单独拎出来说
+                                4): h正常方法，调用ReflectUtils.getMethodCallString方法翻译成反射，然后替换
+                             */
                             @Override
                             void edit(MethodCall m) throws CannotCompileException {
 
@@ -197,6 +220,8 @@ class PatchesFactory {
         }
         //remove static code block,pay attention to the  class created by cloneClassWithoutFields which construct's
         CtClass patchClass = cloneClassWithoutFields(temPatchClass, patchName, null);
+
+        //生成补丁类并增加构造方法
         patchClass = JavaUtils.addPatchConstruct(patchClass, modifiedClass);
         return patchClass;
     }
@@ -234,6 +259,7 @@ class PatchesFactory {
         ClassMap classMap = new ClassMap();
         classMap.put(patchName, sourceClass.getName());
         classMap.fix(sourceClass);
+
         for (CtMethod method : sourceClass.getDeclaredMethods()) {
             if (null == exceptMethodList || !exceptMethodList.contains(method)) {
                 CtMethod newCtMethod = new CtMethod(method, targetClass, classMap);
@@ -244,6 +270,30 @@ class PatchesFactory {
         return targetClass;
     }
 
+    //同this类似，xxPatch中调用 super 方法同样需要转为调用被补丁类中相关方法的super调用。
+    /*
+        根据方法签名生成了一个新的方法，以staticRobust+methodName命名，方法中调用以RobustAssist结尾的类中的同名方法，
+        并调用 PatchesAssistFactory.createAssistClass 方法生成该类，这个类的父类是被补丁类的父类
+
+        反编译出来的结果：
+        MainFragmentActivity:
+        public void onCreate(Bundle bundle) {
+            super.onCreate(bundle);
+            ...
+        }
+
+        MainFragmentActivityPatch:
+        public static void staticRobustonCreate(MainFragmentActivityPatch mainFragmentActivityPatch, MainFragmentActivity mainFragmentActivity, Bundle bundle) {
+            MainFragmentActivityPatchRobustAssist.staticRobustonCreate(mainFragmentActivityPatch, mainFragmentActivity, bundle);
+        }
+
+        MainFragmentActivityPatchRobustAssist:
+        public class MainFragmentActivityPatchRobustAssist extends WrapperAppCompatFragmentActivity {
+            public static void staticRobustonCreate(MainFragmentActivityPatch mainFragmentActivityPatch, MainFragmentActivity mainFragmentActivity, Bundle bundle) {
+                mainFragmentActivityPatch.onCreate(bundler);
+            }
+        }
+     */
     private void dealWithSuperMethod(CtClass patchClass, CtClass modifiedClass, String patchPath) throws NotFoundException, CannotCompileException, IOException {
         StringBuilder methodBuilder;
         List<CtMethod> invokeSuperMethodList = Config.invokeSuperMethodMap.getOrDefault(modifiedClass.getName(), new ArrayList());

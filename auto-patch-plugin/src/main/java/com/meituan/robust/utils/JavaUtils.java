@@ -203,6 +203,28 @@ public class JavaUtils {
         return methodSignure.toString();
     }
 
+    /*
+    这段的作用是，在每个xxPatch补丁类中都插入一个getRealParameter()方法，反编译出来最终的结果：
+
+    public Object[] getRealParameter(Object[] objArr) {
+        if (objArr == null || objArr.length < 1) {
+            return objArr;
+        }
+        Object[] objArr2 = new Object[objArr.length];
+        for (int i = 0; i < objArr.length; i++) {
+            if (objArr[i] instanceof Object[]) {
+                objArr2[i] = getRealParameter((Object[]) objArr[i]);
+            } else if (objArr[i] == this) {
+                objArr2[i] = this.originClass;
+            } else {
+                objArr2[i] = objArr[i];
+            }
+        }
+        return objArr2;
+    }
+
+    它的作用是，在每个xxPatch中使用的this，都转换成xx被补丁类的对象。其中的originClass就是补丁类的对象。
+     */
     public static String getRealParamtersBody() {
         StringBuilder realParameterBuilder = new StringBuilder();
         realParameterBuilder.append("public  Object[] " + Constants.GET_REAL_PARAMETER + " (Object[] args){");

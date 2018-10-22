@@ -68,3 +68,9 @@
 
 6):
     最后一种是新增类的，Add注解加在那个类上，就会把这个类放入补丁内部。
+
+
+
+结束语:
+    本工程中，生成的patch.jar 补丁包里面的内容，在PatchInfoImpl.png  SecondActivityPatch.png  SecondActivityPatchControl_1.png
+    SecondActivityPatchControl_2.png  图片里面

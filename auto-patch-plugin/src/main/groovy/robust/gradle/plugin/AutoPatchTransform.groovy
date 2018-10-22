@@ -57,7 +57,7 @@ class AutoPatchTransform extends Transform implements Plugin<Project> {
         def smaliFilePath = "${ROBUST_DIR}${Constants.LIB_NAME_ARRAY[1]}"  //smali-2.1.2.jar
         def dxFilePath = "${ROBUST_DIR}${Constants.LIB_NAME_ARRAY[2]}"  //dx.jar
 
-        // E:\github\Robust-master\app\build\output\robust\
+        //补丁生成的路径 E:\github\Robust-master\app\build\output\robust\
         Config.robustGenerateDirectory = "${project.buildDir}" + File.separator + "$Constants.ROBUST_GENERATE_DIRECTORY" + File.separator;
 
         //java -jar baksmali.jar -o classout/ classes.dex  classes.dex反编译的smali文件存在./classout之中
@@ -105,6 +105,8 @@ class AutoPatchTransform extends Transform implements Plugin<Project> {
 
 
         outputProvider.deleteAll()
+
+        //~\Downloads\github\Ro\app\build\intermediates\transforms\ComponentCode\release\jars\1\10\b8dd71e9d56e88393344ed997fe09472519bddf623215fdea045716d9ab96cd92121598e.jar
         def outDir = outputProvider.getContentLocation("main", outputTypes, scopes, Format.DIRECTORY)
         project.android.bootClasspath.each {
             Config.classPool.appendClassPath((String) it.absolutePath)
@@ -146,7 +148,7 @@ class AutoPatchTransform extends Transform implements Plugin<Project> {
 
     def autoPatch(List<CtClass> box) {
         File buildDir = project.getBuildDir();
-        // patchPath = app/build/outputs/robust/
+        //补丁生成的路径 patchPath = app/build/outputs/robust/
         String patchPath = buildDir.getAbsolutePath() + File.separator + Constants.ROBUST_GENERATE_DIRECTORY + File.separator;
         //删除 app/build/outputs/robust 文件夹
         clearPatchPath(patchPath);
@@ -218,10 +220,20 @@ class AutoPatchTransform extends Transform implements Plugin<Project> {
             //有@Modify注解方法 和 RobustModify.modify() 调用方法  的 方法签名集合
             Config.methodNeedPatchSet.addAll(Config.patchMethodSignatureSet)
 
+            /*
+            识别被优化过的方法，这里的优化是泛指，包括被优化、内联、新增过的类和方法，具体的逻辑为扫描修改后的所有类和类中的方法，
+            如果这些类和方法不在 mapping 文件中存在，那么可以定义为被优化过，其中包括@Add新增的类或方法。
+             */
             InlineClassFactory.dealInLineClass(patchPath, Config.newlyAddedClassNameList)
 
+
+            /*
+             然后调用initSuperMethodInClass方法识别修改后的所有类和类中的方法中，分析是否如包含 super 方法，如果有那么缓存下来。
+             然后调用 PatchesFactory.createPatch 反射翻译修改的类和方法
+             */
             //有@Modify注解在方法上的类名称的集合
             initSuperMethodInClass(Config.modifiedClassNameList);
+
             //auto generate all class
             for (String fullClassName : Config.modifiedClassNameList) {
                 CtClass ctClass = Config.classPool.get(fullClassName)

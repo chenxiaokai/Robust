@@ -42,7 +42,8 @@ class ReadAnnotation {
                     if (!isNewlyAddClass) {
                         //如果没有@Add注解走这里逻辑    scanClassForModifyMethod 扫描ctclass是否有modify注解
                         patchMethodSignureSet.addAll(scanClassForModifyMethod(ctclass));
-                        //检测方法中ctclass 是否有@Add注解
+
+                        //检测ctclass的method是否有@Add注解
                         scanClassForAddMethodAnnotation(ctclass);
                     }
                 } catch (NullPointerException e) {
@@ -53,10 +54,15 @@ class ReadAnnotation {
                     e.printStackTrace();
                 }
         }
+        //key is   com.meituan.sample.SecondActivity.getArray()
         println("new add methods  list is ")
         JavaUtils.printList(Config.newlyAddedMethodSet.toList())
+
+        //集合没有内容
         println("new add classes list is ")
         JavaUtils.printList(Config.newlyAddedClassNameList)
+
+        //key is   com.meituan.sample.SecondActivity.getTextInfo()
         println(" patchMethodSignatureSet is printed below ")
         JavaUtils.printList(patchMethodSignureSet.asList())
         Config.patchMethodSignatureSet.addAll(patchMethodSignureSet);
